@@ -1,0 +1,39 @@
+services:
+  # ── Express API + SQLite ────────────────────────────────────────
+  server:
+    build:
+      context: ./server
+    environment:
+      DATABASE_URL:    file:/data/prod.db
+      NODE_ENV:        production
+      PORT:            "3001"
+      JWT_SECRET:      ${JWT_SECRET:-change-me-in-production}
+      INVITE_CODE:     ${INVITE_CODE:-CHONKYCATMOVIES}
+      TMDB_API_KEY:    ${TMDB_API_KEY:-}
+      STREAMING_API_KEY: ${STREAMING_API_KEY:-}
+      # Allow requests from the nginx container (same-origin after proxy)
+      CORS_ORIGIN:     "http://localhost,http://localhost:80"
+    volumes:
+      - db_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ── nginx + built React SPA ─────────────────────────────────────
+  web:
+    build:
+      context: ./client
+    ports:
+      - "${APP_PORT:-80}:80"
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db_data:
+    driver: local

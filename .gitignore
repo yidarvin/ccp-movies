@@ -1,0 +1,18 @@
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# SQLite
+server/prisma/dev.db
+server/prisma/dev.db-journal
+
+# Env (keep .env.example, ignore real secrets)
+server/.env
+.env
+client/.env
+
+# Build
+client/dist/
+
+# OS
+.DS_Store
