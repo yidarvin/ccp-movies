@@ -40,11 +40,6 @@ export default function RegisterPage() {
             Get your invite code from a friend<br />and claim your seat.
           </p>
         </div>
-        <div className="w-full mt-4 p-4 bg-amber-400/10 border border-amber-400/20 rounded-xl">
-          <p className="text-amber-400 text-xs font-medium text-center">
-            Default invite code: CHONKYCATMOVIES
-          </p>
-        </div>
       </div>
 
       {/* Right: form */}
@@ -94,7 +89,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-colors font-mono tracking-widest uppercase"
-                placeholder="CHONKYCATMOVIES"
+                placeholder="invite code"
               />
             </div>
 

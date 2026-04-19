@@ -41,7 +41,7 @@ Open `server/.env` and fill in your API keys:
 | Variable | Description | Where to get it |
 |---|---|---|
 | `JWT_SECRET` | Random secret for signing tokens | Any random string |
-| `INVITE_CODE` | Code users need to register | Choose one, default `CHONKYCATMOVIES` |
+| `INVITE_CODE` | Code users need to register | Choose one, default `fuckblizzard` |
 | `TMDB_API_KEY` | TMDB v3 API key | [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) (free) |
 | `STREAMING_API_KEY` | RapidAPI key for Streaming Availability | [rapidapi.com/…/streaming-availability](https://rapidapi.com/movie-of-the-night-movie-of-the-night-default/api/streaming-availability) |
 
@@ -71,7 +71,7 @@ npm run dev
 |---|---|
 | Username | `admin` |
 | Password | `changeme` |
-| Invite code | `CHONKYCATMOVIES` |
+| Invite code | `fuckblizzard` |
 
 > **Change the admin password** after first login by updating the DB directly (`npm run db:studio`).
 
@@ -94,7 +94,7 @@ Edit `.env` in the **repo root** (docker-compose reads it):
 
 ```dotenv
 JWT_SECRET=a-long-random-secret-string
-INVITE_CODE=CHONKYCATMOVIES
+INVITE_CODE=fuckblizzard
 TMDB_API_KEY=your_tmdb_key
 STREAMING_API_KEY=your_rapidapi_key
 APP_PORT=80          # host port to expose (default 80)

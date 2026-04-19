@@ -22,7 +22,7 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ error: 'username, password, and inviteCode are required' })
   }
 
-  if (inviteCode !== (process.env.INVITE_CODE || 'CHONKYCATMOVIES')) {
+  if (inviteCode !== (process.env.INVITE_CODE || 'fuckblizzard')) {
     return res.status(403).json({ error: 'Invalid invite code' })
   }
 
