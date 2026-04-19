@@ -6,6 +6,7 @@ import votesRouter from './routes/votes.js'
 import searchRouter from './routes/search.js'
 import streamingRouter from './routes/streaming.js'
 import adminRouter from './routes/admin.js'
+import { seedIfEmpty } from './seed.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -24,6 +25,8 @@ app.use('/api/streaming', streamingRouter)
 app.use('/api/admin', adminRouter)
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
+
+await seedIfEmpty()
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
