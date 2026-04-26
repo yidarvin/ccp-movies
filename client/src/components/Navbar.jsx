@@ -7,7 +7,6 @@ export default function Navbar({ onAddMovie }) {
 
   const links = [
     { to: '/', label: 'List' },
-    { to: '/chonky-cat-movies', label: 'Reveal' },
     ...(user?.isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
   ]
 

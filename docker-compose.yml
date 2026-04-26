@@ -8,7 +8,7 @@ services:
       NODE_ENV:        production
       PORT:            "3001"
       JWT_SECRET:      ${JWT_SECRET:-change-me-in-production}
-      INVITE_CODE:     ${INVITE_CODE:-FUCKBLIZZARD}
+      INVITE_CODE:     ${INVITE_CODE}
       TMDB_API_KEY:    ${TMDB_API_KEY:-}
       STREAMING_API_KEY: ${STREAMING_API_KEY:-}
       # Allow requests from the nginx container (same-origin after proxy)

@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import HomePage from './pages/HomePage'
-import MovieNightPage from './pages/MovieNightPage'
 import AdminPage from './pages/AdminPage'
 
 function PrivateRoute({ children }) {
@@ -39,8 +38,6 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
-          <Route path="/chonky-cat-movies" element={<PrivateRoute><MovieNightPage /></PrivateRoute>} />
-          <Route path="/movie-night" element={<Navigate to="/chonky-cat-movies" replace />} />
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />

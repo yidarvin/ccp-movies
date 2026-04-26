@@ -15,7 +15,10 @@
       "Bash(python3 -c ':*)",
       "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"username\":\"alice\",\"password\":\"password123\"}')",
       "Bash(ls /Users/darvin/Documents/Projects/ccp-movies/client/.env*)",
-      "Bash(ls /Users/darvin/Documents/Projects/ccp-movies/server/.env*)"
+      "Bash(ls /Users/darvin/Documents/Projects/ccp-movies/server/.env*)",
+      "Bash(grep -E \"\\\\.\\(js|jsx|ts|tsx|json\\)$\")",
+      "Bash(sed -n '24,27p' /Users/darvin/Documents/Projects/darvinyi-movies/server/src/routes/auth.js)",
+      "Bash(sed -n '8,12p' /Users/darvin/Documents/Projects/darvinyi-movies/client/src/components/Navbar.jsx)"
     ]
   }
 }
