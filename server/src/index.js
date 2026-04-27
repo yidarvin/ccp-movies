@@ -6,6 +6,7 @@ import votesRouter from './routes/votes.js'
 import searchRouter from './routes/search.js'
 import streamingRouter from './routes/streaming.js'
 import adminRouter from './routes/admin.js'
+import watchedVotesRouter from './routes/watchedVotes.js'
 import { seedIfEmpty } from './seed.js'
 
 const app = express()
@@ -23,6 +24,7 @@ app.use('/api/votes', votesRouter)
 app.use('/api/search', searchRouter)
 app.use('/api/streaming', streamingRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/watched-votes', watchedVotesRouter)
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
 

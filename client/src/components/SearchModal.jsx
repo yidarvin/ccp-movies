@@ -32,11 +32,12 @@ function ResultCard({ result, isAdded, onAdd }) {
         ? streaming.map((p) => p.service)
         : []
       const res = await api.post('/movies', {
-        tmdbId:            result.tmdbId,
-        title:             result.title,
-        year:              result.year,
-        posterPath:        result.posterPath,
-        genres:            result.genres,
+        tmdbId:             result.tmdbId,
+        title:              result.title,
+        year:               result.year,
+        posterPath:         result.posterPath,
+        genres:             result.genres,
+        overview:           result.overview || null,
         streamingPlatforms: platforms,
       })
       toast.success(`"${res.data.movie.title}" added to the list!`)

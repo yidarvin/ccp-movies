@@ -14,28 +14,48 @@ model User {
   isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  movies Movie[]
-  votes  Vote[]
+  movies       Movie[]
+  votes        Vote[]
+  watchedVotes WatchedVote[]
 }
 
 model Movie {
-  id                 Int      @id @default(autoincrement())
-  tmdbId             Int?     @unique
+  id                 Int       @id @default(autoincrement())
+  tmdbId             Int?      @unique
   title              String
   year               Int?
   posterPath         String?
-  genres             String   @default("[]")
-  streamingPlatforms String   @default("[]")
-  addedAt            DateTime @default(now())
+  genres             String    @default("[]")
+  streamingPlatforms String    @default("[]")
+  addedAt            DateTime  @default(now())
+  watchedAt          DateTime?
+  overview           String?
+  runtime            Int?
+  streamingInfo      String    @default("[]")
+  streamingUpdatedAt DateTime?
 
-  addedById Int
-  addedBy   User   @relation(fields: [addedById], references: [id])
-  votes     Vote[]
+  addedById    Int
+  addedBy      User          @relation(fields: [addedById], references: [id])
+  votes        Vote[]
+  watchedVotes WatchedVote[]
 }
 
 model Vote {
   id        Int      @id @default(autoincrement())
   value     Int
+  createdAt DateTime @default(now())
+
+  userId  Int
+  movieId Int
+  user    User  @relation(fields: [userId], references: [id])
+  movie   Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+}
+
+model WatchedVote {
+  id        Int      @id @default(autoincrement())
+  vote      String   // "UP" or "DOWN"
   createdAt DateTime @default(now())
 
   userId  Int

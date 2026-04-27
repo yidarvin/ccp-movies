@@ -1,15 +1,16 @@
 # 🐱 Chonky Cat Movies
 
-A movie voting app for a small group of friends. Everyone adds movies to a shared list, upvotes or downvotes them, and when you’re ready you reveal the top picks with a dramatic countdown.
+A movie voting app for a small group of friends. Everyone adds movies to a shared list, upvotes or downvotes them, and the group picks what to watch.
 
 ## Features
 
 - **JWT authentication** with invite-code gate
-- **TMDB search** — search movies by title and genre, auto-fills metadata
-- **Streaming availability** — check which platforms each movie is on (per-result, on demand)
+- **TMDB search** — search movies by title and genre, auto-fills metadata, overview, and runtime
+- **Streaming availability** — auto-fetched on add, cached in DB, refresh on demand
 - **Voting** — upvote / downvote with optimistic UI (instant feedback, reverts on error)
 - **Sort & filter** — Top Voted / Recently Added / Recently Voted; filter by genre or platform
-- **Reveal page** (`/chonky-cat-movies`) — top-5 cards face-down, dramatic one-by-one reveal with gold animation
+- **Expandable cards** — click any card to see overview, runtime, and streaming links
+- **Watched list** — mark movies as watched; log thumbs-up / thumbs-down with usernames
 - **Admin panel** — manage movies and users (admin-only)
 - **Dark cinema theme** — amber/gold accents on dark zinc
 
@@ -41,7 +42,7 @@ Open `server/.env` and fill in your API keys:
 | Variable | Description | Where to get it |
 |---|---|---|
 | `JWT_SECRET` | Random secret for signing tokens | Any random string |
-| `INVITE_CODE` | Code users need to register | Choose one, default `FUCKBLIZZARD` |
+| `INVITE_CODE` | Code users need to register (case-insensitive) | Choose any string |
 | `TMDB_API_KEY` | TMDB v3 API key | [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) (free) |
 | `STREAMING_API_KEY` | RapidAPI key for Streaming Availability | [rapidapi.com/…/streaming-availability](https://rapidapi.com/movie-of-the-night-movie-of-the-night-default/api/streaming-availability) |
 
@@ -71,7 +72,7 @@ npm run dev
 |---|---|
 | Username | `admin` |
 | Password | `changeme` |
-| Invite code | `FUCKBLIZZARD` |
+| Invite code | whatever you set in `INVITE_CODE` |
 
 > **Change the admin password** after first login by updating the DB directly (`npm run db:studio`).
 
@@ -94,7 +95,7 @@ Edit `.env` in the **repo root** (docker-compose reads it):
 
 ```dotenv
 JWT_SECRET=a-long-random-secret-string
-INVITE_CODE=FUCKBLIZZARD
+INVITE_CODE=your-invite-code
 TMDB_API_KEY=your_tmdb_key
 STREAMING_API_KEY=your_rapidapi_key
 APP_PORT=80          # host port to expose (default 80)
@@ -132,16 +133,19 @@ ccp-movies/
 │   │   ├── seed.js               # Admin user seed
 │   │   ├── lib/
 │   │   │   ├── prisma.js
-│   │   │   └── formatMovie.js    # Shared movie serialiser
+│   │   │   ├── formatMovie.js    # Movie + watched-movie serialisers
+│   │   │   └── fetchStreaming.js  # RapidAPI streaming helper
 │   │   ├── middleware/
 │   │   │   └── auth.js           # JWT middleware
 │   │   └── routes/
 │   │       ├── auth.js           # /api/auth/*
-│   │       ├── movies.js         # /api/movies/*
+│   │       ├── movies.js         # /api/movies/* (inc. watch + refresh-streaming)
 │   │       ├── votes.js          # /api/votes/*
+│   │       ├── watchedVotes.js   # /api/watched-votes/*
 │   │       ├── search.js         # /api/search  (TMDB proxy)
-│   │       ├── streaming.js      # /api/streaming/:id (Streaming Availability proxy)
+│   │       ├── streaming.js      # /api/streaming/:id (live Streaming Availability proxy)
 │   │       └── admin.js          # /api/admin/*
+│   ├── railway.toml
 │   ├── Dockerfile
 │   ├── docker-entrypoint.sh
 │   └── .env.example
@@ -154,18 +158,19 @@ ccp-movies/
 │   │   │   └── AuthContext.jsx
 │   │   ├── components/
 │   │   │   ├── Navbar.jsx
-│   │   │   ├── MovieCard.jsx     # Poster card, optimistic votes
-│   │   │   └── SearchModal.jsx   # TMDB search + per-result streaming
+│   │   │   ├── MovieCard.jsx     # Expandable card, votes, watch button
+│   │   │   ├── WatchedMovieCard.jsx  # Watched card with thumbs votes
+│   │   │   └── SearchModal.jsx   # TMDB search + add flow
 │   │   └── pages/
 │   │       ├── LoginPage.jsx
 │   │       ├── RegisterPage.jsx
-│   │       ├── HomePage.jsx      # Grid, sort, filter, skeletons
-│   │       ├── MovieNightPage.jsx   # route: /chonky-cat-movies
+│   │       ├── HomePage.jsx      # Movies / Watched tabs, sort, filter
 │   │       └── AdminPage.jsx
+│   ├── railway.toml
 │   ├── Dockerfile
 │   ├── nginx.conf
-│   ├── .env                      # Dev: VITE_API_URL=http://localhost:3001/api
-│   └── .env.production           # Prod build: VITE_API_URL=/api
+│   ├── .env.example              # Dev: VITE_API_URL=http://localhost:3001/api
+│   └── .env.production           # Prod: VITE_API_URL=https://your-server.railway.app/api
 │
 ├── docker-compose.yml
 └── package.json                  # Root workspace (concurrently)

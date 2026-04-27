@@ -18,7 +18,12 @@
       "Bash(ls /Users/darvin/Documents/Projects/ccp-movies/server/.env*)",
       "Bash(grep -E \"\\\\.\\(js|jsx|ts|tsx|json\\)$\")",
       "Bash(sed -n '24,27p' /Users/darvin/Documents/Projects/darvinyi-movies/server/src/routes/auth.js)",
-      "Bash(sed -n '8,12p' /Users/darvin/Documents/Projects/darvinyi-movies/client/src/components/Navbar.jsx)"
+      "Bash(sed -n '8,12p' /Users/darvin/Documents/Projects/darvinyi-movies/client/src/components/Navbar.jsx)",
+      "Bash(npx prisma *)",
+      "Bash(./node_modules/.bin/prisma migrate *)",
+      "Bash(/Users/darvin/Documents/Projects/darvinyi-movies/node_modules/.bin/prisma migrate *)",
+      "Bash(DATABASE_URL=\"file:./dev.db\" /Users/darvin/Documents/Projects/darvinyi-movies/node_modules/.bin/prisma migrate dev --name add_watched_feature)",
+      "Bash(DATABASE_URL=\"file:./dev.db\" /Users/darvin/Documents/Projects/darvinyi-movies/node_modules/.bin/prisma migrate dev --name add_streaming_details)"
     ]
   }
 }
