@@ -79,6 +79,35 @@ router.post('/login', async (req, res) => {
   })
 })
 
+// POST /api/auth/change-password
+router.post('/change-password', requireAuth, async (req, res) => {
+  const currentPassword = (req.body.currentPassword || '').trim()
+  const newPassword = (req.body.newPassword || '').trim()
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'currentPassword and newPassword are required' })
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters' })
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } })
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' })
+  }
+
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash)
+  if (!valid) {
+    return res.status(401).json({ error: 'Current password is incorrect' })
+  }
+
+  // Existing JWTs remain valid until their 7-day expiry — no token versioning, fine for this app.
+  const passwordHash = await bcrypt.hash(newPassword, 12)
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } })
+
+  res.json({ success: true })
+})
+
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({

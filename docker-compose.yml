@@ -7,8 +7,9 @@ services:
       DATABASE_URL:    file:/data/prod.db
       NODE_ENV:        production
       PORT:            "3001"
-      JWT_SECRET:      ${JWT_SECRET:-change-me-in-production}
+      JWT_SECRET:      ${JWT_SECRET:?JWT_SECRET must be set}
       INVITE_CODE:     ${INVITE_CODE}
+      ADMIN_PASSWORD:  ${ADMIN_PASSWORD:-}
       TMDB_API_KEY:    ${TMDB_API_KEY:-}
       STREAMING_API_KEY: ${STREAMING_API_KEY:-}
       # Allow requests from the nginx container (same-origin after proxy)

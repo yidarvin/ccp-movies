@@ -14,9 +14,10 @@ model User {
   isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  movies       Movie[]
-  votes        Vote[]
-  watchedVotes WatchedVote[]
+  movies           Movie[]
+  votes            Vote[]
+  watchedVotes     WatchedVote[]
+  watchedReactions WatchedReaction[]
 }
 
 model Movie {
@@ -33,11 +34,13 @@ model Movie {
   runtime            Int?
   streamingInfo      String    @default("[]")
   streamingUpdatedAt DateTime?
+  deletedAt          DateTime?
 
-  addedById    Int
-  addedBy      User          @relation(fields: [addedById], references: [id])
-  votes        Vote[]
-  watchedVotes WatchedVote[]
+  addedById        Int
+  addedBy          User              @relation(fields: [addedById], references: [id])
+  votes            Vote[]
+  watchedVotes     WatchedVote[]
+  watchedReactions WatchedReaction[]
 }
 
 model Vote {
@@ -57,6 +60,20 @@ model WatchedVote {
   id        Int      @id @default(autoincrement())
   vote      String   // "UP" or "DOWN"
   createdAt DateTime @default(now())
+
+  userId  Int
+  movieId Int
+  user    User  @relation(fields: [userId], references: [id])
+  movie   Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+}
+
+model WatchedReaction {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   userId  Int
   movieId Int

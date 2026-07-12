@@ -43,6 +43,7 @@ Open `server/.env` and fill in your API keys:
 |---|---|---|
 | `JWT_SECRET` | Random secret for signing tokens | Any random string |
 | `INVITE_CODE` | Code users need to register (case-insensitive) | Choose any string |
+| `ADMIN_PASSWORD` | Password for the seeded `admin` user | Choose a strong password — if left unset, no admin user is seeded |
 | `TMDB_API_KEY` | TMDB v3 API key | [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) (free) |
 | `STREAMING_API_KEY` | RapidAPI key for Streaming Availability | [rapidapi.com/…/streaming-availability](https://rapidapi.com/movie-of-the-night-movie-of-the-night-default/api/streaming-availability) |
 
@@ -51,7 +52,7 @@ Open `server/.env` and fill in your API keys:
 ```bash
 cd server
 npm run db:migrate   # creates SQLite db + runs migrations
-npm run db:seed      # creates admin user (admin / changeme)
+npm run db:seed      # creates admin user 'admin' with the ADMIN_PASSWORD you set
 ```
 
 ### 4. Run both services
@@ -71,10 +72,19 @@ npm run dev
 | Field | Value |
 |---|---|
 | Username | `admin` |
-| Password | `changeme` |
+| Password | whatever you set in `ADMIN_PASSWORD` |
 | Invite code | whatever you set in `INVITE_CODE` |
 
-> **Change the admin password** after first login by updating the DB directly (`npm run db:studio`).
+> **Change the admin password** any time via `POST /api/auth/change-password` (body: `{ currentPassword, newPassword }`, requires the current auth token) — no direct DB access needed.
+>
+> **Upgrading an existing deployment?** If you seeded before `ADMIN_PASSWORD` existed, the admin account still has whatever password it was created with (previously the hardcoded `changeme`). Rotate it immediately:
+> ```bash
+> TOKEN=$(curl -s -X POST <your-api-url>/api/auth/login -H 'Content-Type: application/json' \
+>   -d '{"username":"admin","password":"changeme"}' | jq -r .token)
+> curl -X POST <your-api-url>/api/auth/change-password -H "Authorization: Bearer $TOKEN" \
+>   -H 'Content-Type: application/json' \
+>   -d '{"currentPassword":"changeme","newPassword":"<new-strong-password>"}'
+> ```
 
 ---
 
@@ -96,10 +106,13 @@ Edit `.env` in the **repo root** (docker-compose reads it):
 ```dotenv
 JWT_SECRET=a-long-random-secret-string
 INVITE_CODE=your-invite-code
+ADMIN_PASSWORD=a-strong-admin-password
 TMDB_API_KEY=your_tmdb_key
 STREAMING_API_KEY=your_rapidapi_key
 APP_PORT=80          # host port to expose (default 80)
 ```
+
+`JWT_SECRET` has no fallback — `docker compose up` fails fast if it's unset, rather than silently booting with a known default.
 
 ### 2. Build and start
 
@@ -186,19 +199,34 @@ ccp-movies/
 | POST | `/api/auth/register` | — | Register (requires `inviteCode`) |
 | POST | `/api/auth/login` | — | Login, returns JWT |
 | GET  | `/api/auth/me` | ✓ | Current user |
+| POST | `/api/auth/change-password` | ✓ | Change your own password `{currentPassword, newPassword}` |
 
 ### Movies
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET    | `/api/movies` | ✓ | All movies, sorted by netVotes |
-| POST   | `/api/movies` | ✓ | Add a movie |
-| DELETE | `/api/movies/:id` | admin | Delete a movie |
+| GET    | `/api/movies` | ✓ | Unwatched movies, sorted by netVotes |
+| GET    | `/api/movies/watched` | ✓ | Watched movies, sorted by watchedAt |
+| GET    | `/api/movies/deleted` | admin | Soft-deleted movies, sorted by deletedAt |
+| POST   | `/api/movies` | ✓ | Add a movie (restores it if it was previously soft-deleted) |
+| PATCH  | `/api/movies/:id/watch` | ✓ | Mark as watched |
+| PATCH  | `/api/movies/:id/unwatch` | ✓ | Undo: move a watched movie back to the list |
+| PATCH  | `/api/movies/:id/watched-date` | ✓ | Correct the recorded watch date `{watchedAt}` |
+| PATCH  | `/api/movies/:id/restore` | admin | Undo a soft delete |
+| DELETE | `/api/movies/:id` | admin | Soft-delete a movie |
 
 ### Votes
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | POST   | `/api/votes` | ✓ | Cast / change vote `{movieId, value: 1\|-1}` |
 | DELETE | `/api/votes/:movieId` | ✓ | Remove your vote |
+
+### Watched votes & reactions
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST   | `/api/watched-votes` | ✓ | Cast / change thumbs `{movieId, vote: 'UP'\|'DOWN'}` |
+| DELETE | `/api/watched-votes/:movieId` | ✓ | Remove your thumbs vote |
+| POST   | `/api/watched-reactions` | ✓ | Set / update your one-line reaction `{movieId, text}` |
+| DELETE | `/api/watched-reactions/:movieId` | ✓ | Remove your reaction |
 
 ### Search & Streaming
 | Method | Path | Auth | Description |

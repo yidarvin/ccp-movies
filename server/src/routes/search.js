@@ -111,6 +111,9 @@ router.get('/', requireAuth, async (req, res) => {
     page: tmdbData.page,
     totalPages: tmdbData.total_pages,
     totalResults: tmdbData.total_results,
+    // Results were filtered by genre in-process, but page/totalPages still describe the
+    // unfiltered TMDB search — some pages may render fewer results than the count implies.
+    filteredByGenre: Boolean(query && genreId),
   })
 })
 

@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar'
 import MovieCard from '../components/MovieCard'
 import WatchedMovieCard from '../components/WatchedMovieCard'
 import SearchModal from '../components/SearchModal'
+import RouletteModal from '../components/RouletteModal'
+import { showUndoToast } from '../lib/undoToast'
 
 const SORT_OPTIONS = [
   { key: 'top',    label: 'Top Voted' },
@@ -76,6 +78,7 @@ export default function HomePage() {
   const [watchedLoaded, setWatchedLoaded] = useState(false)
 
   const [showModal, setShowModal]         = useState(false)
+  const [showRoulette, setShowRoulette]   = useState(false)
 
   useEffect(() => {
     api.get('/movies')
@@ -107,21 +110,58 @@ export default function HomePage() {
   function handleDelete(id) {
     setMovies((prev) => prev.filter((m) => m.id !== id))
   }
+  function handleRestore(movie) {
+    setMovies((prev) => (prev.some((m) => m.id === movie.id) ? prev : [movie, ...prev]))
+  }
   function handleAdded(movie) {
     setMovies((prev) => [movie, ...prev])
     toast.success(`"${movie.title}" added!`)
   }
+  async function unwatchMovie(movieId) {
+    try {
+      const res = await api.patch(`/movies/${movieId}/unwatch`)
+      setWatchedMovies((prev) => prev.filter((m) => m.id !== movieId))
+      setMovies((prev) =>
+        prev.some((m) => m.id === movieId) ? prev : [res.data.movie, ...prev]
+      )
+      toast.success(`"${res.data.movie.title}" moved back to the list`)
+      return true
+    } catch (err) {
+      const status = err.response?.status
+      if (status === 409 || status === 404) {
+        // Someone else un-watched it (409) or it was deleted (404) — resync.
+        toast.error(err.response?.data?.error || 'Movie state changed — refreshing')
+        api.get('/movies').then((r) => setMovies(r.data.movies)).catch(() => {})
+        if (watchedLoaded) loadWatched()
+        else setWatchedMovies((prev) => prev.filter((m) => m.id !== movieId))
+      } else {
+        toast.error(err.response?.data?.error || 'Failed to move back')
+      }
+      return false
+    }
+  }
+
   function handleWatched(watchedMovie) {
     // Remove from unwatched list
     setMovies((prev) => prev.filter((m) => m.id !== watchedMovie.id))
     // Prepend to watched list (data already formatted by the server)
-    setWatchedMovies((prev) => [watchedMovie, ...prev])
-    if (!watchedLoaded) setWatchedLoaded(true)
+    setWatchedMovies((prev) =>
+      prev.some((m) => m.id === watchedMovie.id) ? prev : [watchedMovie, ...prev]
+    )
+    showUndoToast({
+      message: `"${watchedMovie.title}" marked as watched`,
+      onUndo: () => unwatchMovie(watchedMovie.id),
+      id: `watched-${watchedMovie.id}`,
+    })
   }
 
   // ── Watched handlers ───────────────────────────────────────────
   function handleWatchedUpdate(updated) {
-    setWatchedMovies((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+    setWatchedMovies((prev) =>
+      prev
+        .map((m) => (m.id === updated.id ? updated : m))
+        .sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt))
+    )
   }
 
   // ── Derived filter options ─────────────────────────────────────
@@ -140,7 +180,12 @@ export default function HomePage() {
   // ── Sort ───────────────────────────────────────────────────────
   const sorted = useMemo(() => {
     const list = [...movies]
-    if (sortBy === 'top')    return list.sort((a, b) => b.netVotes - a.netVotes)
+    if (sortBy === 'top')
+      return list.sort((a, b) =>
+        b.netVotes - a.netVotes ||
+        (b.upvoters?.length ?? 0) - (a.upvoters?.length ?? 0) ||
+        new Date(b.lastVotedAt ?? 0) - new Date(a.lastVotedAt ?? 0)
+      )
     if (sortBy === 'recent') return list.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))
     if (sortBy === 'voted') {
       const withVote    = list.filter((m) => m.lastVotedAt).sort((a, b) => new Date(b.lastVotedAt) - new Date(a.lastVotedAt))
@@ -248,6 +293,14 @@ export default function HomePage() {
                   </button>
                 )}
 
+                <button
+                  onClick={() => setShowRoulette(true)}
+                  disabled={visible.length === 0}
+                  className="bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-zinc-950 font-bold px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors"
+                >
+                  🎲 Pick for us
+                </button>
+
                 {/* Search — pushed right on desktop */}
                 <div className="sm:ml-auto relative">
                   <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,6 +338,7 @@ export default function HomePage() {
                       onUpdate={handleUpdate}
                       onDelete={handleDelete}
                       onWatched={handleWatched}
+                      onRestore={handleRestore}
                     />
                   ))
               }
@@ -338,6 +392,7 @@ export default function HomePage() {
                       key={movie.id}
                       movie={movie}
                       onUpdate={handleWatchedUpdate}
+                      onUnwatch={unwatchMovie}
                     />
                   ))}
                 </div>
@@ -352,6 +407,14 @@ export default function HomePage() {
           existingTmdbIds={existingTmdbIds}
           onClose={() => setShowModal(false)}
           onAdded={handleAdded}
+        />
+      )}
+
+      {showRoulette && (
+        <RouletteModal
+          movies={visible}
+          onClose={() => setShowRoulette(false)}
+          onWatched={handleWatched}
         />
       )}
     </div>

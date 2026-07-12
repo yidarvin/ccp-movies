@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../context/useAuth'
 import api from '../api'
 import toast from 'react-hot-toast'
+import { showUndoToast } from '../lib/undoToast'
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w342'
 
@@ -54,7 +55,7 @@ function VoteButton({ direction, active, disabled, onClick }) {
   )
 }
 
-export default function MovieCard({ movie, onUpdate, onDelete, onWatched }) {
+export default function MovieCard({ movie, onUpdate, onDelete, onWatched, onRestore }) {
   const { user }  = useAuth()
   const [expanded,   setExpanded]   = useState(false)
   const [voting,     setVoting]     = useState(false)
@@ -77,9 +78,12 @@ export default function MovieCard({ movie, onUpdate, onDelete, onWatched }) {
         : await api.post('/votes', { movieId: movie.id, value: next })
       onUpdate(res.data.movie)
     } catch (err) {
-      onUpdate(movie)
-      if (err.response?.status !== 404) {
-        toast.error(err.response?.data?.error || 'Vote failed')
+      const notFound = err.response?.status === 404
+      if (next === 0 && notFound) {
+        // Vote already gone server-side — the optimistic cleared state is correct. Keep it.
+      } else {
+        onUpdate(movie)
+        if (!notFound) toast.error(err.response?.data?.error || 'Vote failed')
       }
     } finally {
       setVoting(false)
@@ -87,11 +91,21 @@ export default function MovieCard({ movie, onUpdate, onDelete, onWatched }) {
   }
 
   async function handleDelete() {
-    if (!confirm(`Remove "${movie.title}" from the list?`)) return
     try {
       await api.delete(`/movies/${movie.id}`)
       onDelete(movie.id)
-      toast.success('Movie removed from the list')
+      showUndoToast({
+        message: `"${movie.title}" removed`,
+        onUndo: async () => {
+          try {
+            const res = await api.patch(`/movies/${movie.id}/restore`)
+            onRestore(res.data.movie)
+          } catch (err) {
+            toast.error(err.response?.data?.error || 'Restore failed')
+          }
+        },
+        id: `deleted-${movie.id}`,
+      })
     } catch (err) {
       toast.error(err.response?.data?.error || 'Delete failed')
     }
@@ -103,7 +117,6 @@ export default function MovieCard({ movie, onUpdate, onDelete, onWatched }) {
     try {
       const res = await api.patch(`/movies/${movie.id}/watch`)
       onWatched(res.data.movie)
-      toast.success(`"${movie.title}" marked as watched!`)
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to mark as watched')
     } finally {
@@ -275,6 +288,24 @@ export default function MovieCard({ movie, onUpdate, onDelete, onWatched }) {
                 </p>
               )}
             </div>
+
+            {/* Who voted */}
+            {(movie.upvoters?.length > 0 || movie.downvoters?.length > 0) && (
+              <div className="space-y-1 text-xs">
+                {movie.upvoters?.length > 0 && (
+                  <div className="flex items-baseline gap-1 flex-wrap">
+                    <span className="text-amber-400 font-semibold shrink-0">👍 {movie.upvoters.length}</span>
+                    <span className="text-zinc-600">{movie.upvoters.join(', ')}</span>
+                  </div>
+                )}
+                {movie.downvoters?.length > 0 && (
+                  <div className="flex items-baseline gap-1 flex-wrap">
+                    <span className="text-red-400 font-semibold shrink-0">👎 {movie.downvoters.length}</span>
+                    <span className="text-zinc-600">{movie.downvoters.join(', ')}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Last updated + refresh */}
             <div className="flex items-center justify-between">

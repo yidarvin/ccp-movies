@@ -1,17 +1,14 @@
 import { Router } from 'express'
 import prisma from '../lib/prisma.js'
 import { requireAuth } from '../middleware/auth.js'
-import { formatMovie } from '../lib/formatMovie.js'
+import { formatMovie, movieInclude } from '../lib/formatMovie.js'
 
 const router = Router()
 
 async function fetchMovie(movieId) {
   return prisma.movie.findUnique({
     where: { id: movieId },
-    include: {
-      votes: true,
-      addedBy: { select: { id: true, username: true } },
-    },
+    include: movieInclude,
   })
 }
 
@@ -29,7 +26,7 @@ router.post('/', requireAuth, async (req, res) => {
   }
 
   const movie = await prisma.movie.findUnique({ where: { id: Number(movieId) } })
-  if (!movie) {
+  if (!movie || movie.deletedAt) {
     return res.status(404).json({ error: 'Movie not found' })
   }
 
@@ -48,7 +45,7 @@ router.delete('/:movieId', requireAuth, async (req, res) => {
   const movieId = Number(req.params.movieId)
 
   const movie = await prisma.movie.findUnique({ where: { id: movieId } })
-  if (!movie) {
+  if (!movie || movie.deletedAt) {
     return res.status(404).json({ error: 'Movie not found' })
   }
 

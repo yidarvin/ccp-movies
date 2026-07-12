@@ -15,7 +15,10 @@ export function AuthProvider({ children }) {
     api
       .get('/auth/me')
       .then((res) => setUser(res.data.user))
-      .catch(() => localStorage.removeItem('token'))
+      .catch((err) => {
+        const status = err.response?.status
+        if (status === 401 || status === 403) localStorage.removeItem('token')
+      })
       .finally(() => setLoading(false))
   }, [])
 

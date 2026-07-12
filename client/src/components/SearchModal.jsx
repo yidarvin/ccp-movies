@@ -136,6 +136,7 @@ export default function SearchModal({ existingTmdbIds, onClose, onAdded }) {
   const [results, setResults] = useState(null)   // null = not searched yet
   const [page, setPage]       = useState(1)
   const [totalPages, setTotal] = useState(1)
+  const [filteredByGenre, setFilteredByGenre] = useState(false)
   const [searching, setSearching] = useState(false)
   const [addedIds, setAddedIds]   = useState(new Set())
   const inputRef = useRef(null)
@@ -151,6 +152,7 @@ export default function SearchModal({ existingTmdbIds, onClose, onAdded }) {
       setResults(res.data.results)
       setPage(res.data.page)
       setTotal(res.data.totalPages)
+      setFilteredByGenre(res.data.filteredByGenre)
     } catch (err) {
       toast.error(err.response?.data?.error || 'Search failed')
     } finally {
@@ -235,24 +237,37 @@ export default function SearchModal({ existingTmdbIds, onClose, onAdded }) {
               <div className="text-4xl mb-3">🔍</div>
               <p className="text-sm">Search for a movie to add it to the list</p>
             </div>
-          ) : results.length === 0 ? (
-            <div className="text-center py-16 text-zinc-500">
-              <p className="text-sm">No results found.</p>
-            </div>
           ) : (
             <>
-              <div className="space-y-2">
-                {results.map((r) => (
-                  <ResultCard
-                    key={r.tmdbId}
-                    result={r}
-                    isAdded={existingTmdbIds.has(r.tmdbId) || addedIds.has(r.tmdbId)}
-                    onAdd={handleAdded}
-                  />
-                ))}
-              </div>
+              {results.length === 0 ? (
+                <div className="text-center py-16 text-zinc-500">
+                  <p className="text-sm">
+                    {filteredByGenre && totalPages > 1
+                      ? 'No matches on this page — try the next page or clear the genre filter.'
+                      : 'No results found.'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {filteredByGenre && totalPages > 1 && (
+                    <p className="text-xs text-zinc-500 mb-2">
+                      Some results hidden by genre filter — pages may be partial.
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    {results.map((r) => (
+                      <ResultCard
+                        key={r.tmdbId}
+                        result={r}
+                        isAdded={existingTmdbIds.has(r.tmdbId) || addedIds.has(r.tmdbId)}
+                        onAdd={handleAdded}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
 
-              {/* Pagination */}
+              {/* Pagination — kept visible even on an empty filtered page so users can navigate past it */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-zinc-800">
                   <button
